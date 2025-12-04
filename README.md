@@ -1,89 +1,89 @@
-# بوت ديسكورد سريع 🚀
+# ProBot Blacklist Report System 🚫
 
-بوت ديسكورد مكتوب بـ Node.js و discord.js مع دعم Slash Commands.
+A comprehensive Discord bot built with Node.js and Discord.js for managing blacklist reports with professional features.
 
-## المتطلبات
-- Node.js (الإصدار 16.9.0 أو أحدث)
-- حساب Discord مع بوت
+## Requirements
+- Node.js (version 16.9.0 or higher)
+- Discord account with bot
 
-## الإعداد
+## Setup
 
-1. **احصل على توكن البوت:**
-   - اذهب إلى [Discord Developer Portal](https://discord.com/developers/applications)
-   - أنشئ تطبيق جديد
-   - اذهب إلى قسم "Bot" وانقر "Add Bot"
-   - انسخ التوكن من قسم "Token"
+1. **Get Bot Token:**
+   - Go to [Discord Developer Portal](https://discord.com/developers/applications)
+   - Create a new application
+   - Go to "Bot" section and click "Add Bot"
+   - Copy the token from "Token" section
 
-2. **احصل على Client ID:**
-   - من نفس الصفحة في Developer Portal
-   - انسخ الـ "Application ID" من قسم "General Information"
+2. **Get Client ID:**
+   - From the same page in Developer Portal
+   - Copy the "Application ID" from "General Information" section
 
-3. **ضع البيانات في ملف `.env`:**
+3. **Create `.env` file:**
    ```env
    DISCORD_TOKEN=your_bot_token_here
    CLIENT_ID=your_client_id_here
+   WEBHOOK_URL=your_webhook_url_here
    ```
 
-4. **قم بدعوة البوت للسيرفر:**
-   - اذهب إلى قسم "OAuth2" → "URL Generator"
-   - اختر `bot` و `applications.commands`
-   - انسخ الرابط وادخله في المتصفح
+4. **Invite the bot to your server:**
+   - Go to "OAuth2" → "URL Generator" section
+   - Select `bot` and `applications.commands`
+   - Copy the link and paste it in your browser
 
-5. **إعداد نظام المراقبة (اختياري):**
-   - أنشئ webhook في روم منفصل للأخطاء
-   - انسخ رابط الـ webhook
-   - استخدم الأمر `/setwebhook [رابط-webhook]` لتفعيل نظام تسجيل الأخطاء
+5. **Setup Error Monitoring (Optional):**
+   - Create a webhook in a separate error logging channel
+   - Copy the webhook URL
+   - Use `/setwebhook [webhook-url]` command to enable error logging system
 
-## التشغيل
+## Installation & Running
 
 ```bash
-# تثبيت التبعيات (تم بالفعل)
+# Install dependencies
 npm install
 
-# تسجيل الأوامر
+# Register slash commands
 node deploy-commands.js
 
-# تشغيل البوت
+# Start the bot
 npm start
 ```
 
-## الأوامر المتاحة
+## Available Commands
 
-### أوامر الإعداد (للإدمن فقط):
-- `/setup #channel` - إعداد روم التقارير ورول الإدمن
-- `/panel` - إنشاء لوحة التحكم بالأزرار
+### Slash Commands
+- `/setup [channel] [admin_role]` - Setup bot for the server
+- `/panel` - Create blacklist management panel
+- `/check [user]` - Check all reports for a specific user
+- `/setwebhook [url]` - Set error logging webhook
+- `/ping` - Test bot latency
 
-### أوامر الإدارة (للإدمن فقط):
-- `/setup #channel` - إعداد روم التقارير
-- `/panel` - إنشاء لوحة التحكم بالأزرار
-- `/check user_id` - البحث في تقارير مستخدم معين
-- `/setwebhook url` - إعداد webhook للأخطاء
+### Prefix Commands
+- `!stats` - Display/update statistics message
+- `!panel` - Create/update management panel
+- `!clearreports CONFIRM` - Clear all reports (dangerous)
 
-### أوامر البادئة (Prefix Commands):
-- `!stats` - عرض الإحصائيات العامة مع تحديث تلقائي
-- `!panel` - إنشاء لوحة التحكم الثابتة
-- `!clearreports CONFIRM` - مسح جميع التقارير (للإدمن فقط)
+## Features
 
-### أوامر عامة:
-- `/ping` - يقيس تأخير البوت
+### 🔧 **Report System**
+- **Report Users**: Click "Report User" button to report users to blacklist
+- **Unblacklist Users**: Click "Unblacklist User" button to remove users from blacklist
+- **Update Reports**: System allows updating existing reports instead of creating duplicates
+- **Persistent Storage**: All reports are saved in JSON format
 
-### نظام الريبورت:
-البوت يعمل نظام ريبورت متطور للبلاك ليست:
+### 📊 **Statistics & Monitoring**
+- **Real-time Statistics**: Auto-updating stats messages
+- **Persistent Panels**: Always-available management panels
+- **Error Logging**: Webhook integration for error monitoring
+- **Comprehensive Logs**: Detailed logging for all bot actions
 
-1. **الريبورت**: اضغط على زر "Report User" في لوحة التحكم
-2. **فك البلاك ليست**: اضغط على زر "Unblacklist User" في لوحة التحكم
-
-النظام يحفظ جميع التقارير ويسمح بتتبعها وتحديثها.
-
-### ميزة البحث المتقدمة (/check):
-- **البحث المتقدم**: ابحث عن جميع تقارير أي مستخدم
-- **إحصائيات شاملة**: عرض عدد التقارير النشطة والمُحلّة
-- **تفاصيل كاملة**: عرض تاريخ كل تقرير وحالته
-- **سجل التعديلات**: عرض جميع التعديلات على التقرير
-- **تنقل سهل**: أزرار للتنقل بين التقارير (إذا كانت كثيرة)
-- **وضوح الحالة**: مؤشرات بصرية واضحة للحالة (نشط/مُحلّ)
-- **ألوان تمييز**: أخضر للمُحلّ، أحمر للنشط
-- **أمان عالي**: متاح للإدمن فقط
+### 🔍 **Advanced Search (/check)**
+- **User Report Lookup**: Search all reports for any user
+- **Complete Statistics**: Show active vs resolved reports count
+- **Full Details**: Display report date, status, and modification history
+- **Easy Navigation**: Buttons to navigate between multiple reports
+- **Status Indicators**: Clear visual indicators (Active/Resolved)
+- **Color Coding**: Green for resolved, Red for active
+- **Admin Only**: Secure access for administrators only
 
 ### تحديث التقارير التلقائي:
 - **عدم التكرار**: إذا كان هناك تقرير موجود للمستخدم، يتم تحديثه بدلاً من إنشاء تقرير جديد
@@ -97,23 +97,24 @@ npm start
 - **أمان عالي**: webhook محمي ولا يمكن الوصول إليه إلا من البوت
 
 ### ⚠️ تحذيرات مهمة:
-- **أمر `!clearreports CONFIRM`**: يمسح جميع التقارير نهائياً ولا يمكن التراجع عنه
-- تأكد من إدخال `CONFIRM` بحروف كبيرة قبل تنفيذ الأمر
-- هذا الأمر يعيد تعيين جميع الإحصائيات واللوحات
+### ⚠️ **Danger Zone (!clearreports CONFIRM)**
+- **Permanently deletes** all reports - cannot be undone
+- Requires `CONFIRM` in uppercase before execution
+- Resets all statistics and panels
 
-### الإحصائيات التلقائية (!stats):
-- **تحديث تلقائي**: الإحصائيات تتحدث كلما تم إضافة أو حل تقرير
-- **إحصائيات شاملة**: عدد التقارير، المستخدمين، الحالات النشطة والمُحلّة
-- **رسالة ثابتة**: تبقى في الروم وتتحدث تلقائياً
+### 📈 **Auto-Statistics (!stats)**
+- **Real-time Updates**: Statistics update when reports are added or resolved
+- **Comprehensive Stats**: Shows report count, users, active and resolved cases
+- **Persistent Message**: Stays in channel and updates automatically
 
-### لوحة التحكم الثابتة (!panel):
-- **مرئية للجميع**: يمكن للجميع رؤية الأزرار
-- **تحديث تلقائي**: الإحصائيات تتحدث كلما تغيرت
-- **لا تحتاج إعادة إنشاء**: تبقى موجودة حتى يتم حذفها يدوياً
+### 🎛️ **Persistent Control Panel (!panel)**
+- **Visible to All**: Everyone can see the buttons
+- **Auto-Updates**: Statistics update when changed
+- **No Recreation Needed**: Stays until manually deleted
 
-## إضافة أوامر جديدة
+## Adding New Commands
 
-أنشئ ملف جديد في مجلد `commands/` مع هذا التنسيق:
+Create a new file in the `commands/` folder with this format:
 
 ```javascript
 const { SlashCommandBuilder } = require('discord.js');
@@ -121,40 +122,44 @@ const { SlashCommandBuilder } = require('discord.js');
 module.exports = {
     data: new SlashCommandBuilder()
         .setName('command_name')
-        .setDescription('وصف الأمر'),
+        .setDescription('Command description'),
 
     async execute(interaction) {
-        // كود الأمر هنا
-        await interaction.reply('رد الأمر');
+        // Command code here
+        await interaction.reply('Command response');
     },
 };
 ```
 
-ثم أعد تشغيل `node deploy-commands.js` لتسجيل الأمر الجديد.
+Then run `node deploy-commands.js` to register the new command.
 
-## كيفية الاستخدام
+## Usage Guide
 
-### للإدمن:
-1. استخدم `/setup #روم-التقارير` لتحديد روم التقارير
-2. استخدم `/panel` لإنشاء لوحة التحكم
-3. اضغط على الأزرار لإنشاء التقارير أو فك البلاك ليست
+### For Admins:
+1. Use `/setup #report-channel` to set the report channel
+2. Use `/panel` to create the management panel
+3. Click buttons to create reports or unblacklist users
 
-### الميزات:
-- 🚫 **ريبورت مستخدم**: إدخال ID المستخدم، السبب، ورابط دليل الصورة
-- ✅ **فك البلاك ليست**: إدخال ID المستخدم لإلغاء الحظر
-- 📊 **إحصائيات حية**: عرض عدد التقارير والحالات
-- 🔄 **تحديث تلقائي**: تحديث الرسائل عند فك البلاك ليست
-- 🛡️ **أمان عالي**: صلاحيات إدمن فقط
+### Key Features:
+- 🚫 **Report User**: Enter user ID, reason, and image proof link
+- ✅ **Unblacklist User**: Enter user ID to remove from blacklist
+- 📊 **Live Statistics**: Shows report counts and statuses
+- 🔄 **Auto-Updates**: Messages update when unblacklisting occurs
+- 🛡️ **High Security**: Admin permissions only
 
-## الميزات التقنية
+## Technical Features
 
-- ⚡ سريع جداً مع discord.js v14
-- 🔄 دعم Slash Commands و Modal dialogs
-- 📁 تنظيم ممتاز للكود (MVC pattern)
-- 🛡️ معالجة أخطاء متقدمة
-- 💾 حفظ البيانات في JSON
-- 🌍 دعم اللغة العربية والإنجليزية
+- ⚡ Fast performance with Discord.js v14
+- 🔄 Slash Commands and Modal dialogs support
+- 📁 Excellent code organization (MVC pattern)
+- 🛡️ Advanced error handling
+- 💾 JSON data persistence
+- 🌍 Professional English interface
+
+## Support
+
+If you encounter any issues or need help, please check the error logs or contact the developer.
 
 ---
 
-**استمتع ببوتك! 🤖**
+**Enjoy your bot! 🤖✨**
