@@ -1,36 +1,16 @@
 # ProBot Blacklist Report System 🚫
 
-A comprehensive Discord bot built with Node.js and Discord.js for managing blacklist reports with professional features.
 
-## Requirements
-- Node.js (version 16.9.0 or higher)
-- Discord account with bot
 
 ## Setup
 
-1. **Get Bot Token:**
-   - Go to [Discord Developer Portal](https://discord.com/developers/applications)
-   - Create a new application
-   - Go to "Bot" section and click "Add Bot"
-   - Copy the token from "Token" section
-
-2. **Get Client ID:**
-   - From the same page in Developer Portal
-   - Copy the "Application ID" from "General Information" section
-
-3. **Create `.env` file:**
+1. **Create `.env` file:**
    ```env
    DISCORD_TOKEN=your_bot_token_here
    CLIENT_ID=your_client_id_here
    WEBHOOK_URL=your_webhook_url_here
    ```
-
-4. **Invite the bot to your server:**
-   - Go to "OAuth2" → "URL Generator" section
-   - Select `bot` and `applications.commands`
-   - Copy the link and paste it in your browser
-
-5. **Setup Error Monitoring (Optional):**
+2. **Setup Error Monitoring (Optional):**
    - Create a webhook in a separate error logging channel
    - Copy the webhook URL
    - Use `/setwebhook [webhook-url]` command to enable error logging system
