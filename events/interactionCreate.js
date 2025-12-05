@@ -7,14 +7,7 @@ module.exports = {
     async execute(interaction) {
         if (!interaction.isChatInputCommand()) return;
 
-        // Check if command is used in allowed guild
-        if (interaction.guildId !== ALLOWED_GUILD_ID) {
-            await interaction.reply({
-                content: '❌ This bot is only available in authorized servers!',
-                ephemeral: true
-            });
-            return;
-        }
+        // Bot now works in all guilds
 
         const command = interaction.client.commands.get(interaction.commandName);
 

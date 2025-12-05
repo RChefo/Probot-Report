@@ -11,10 +11,9 @@ module.exports = {
         // Ignore bot messages
         if (message.author.bot) return;
 
-        // Check for staff report command (guild restricted)
+        // Check for staff report command (works in all guilds)
         if (message.content.toLowerCase() === '!staffreport' || message.content.toLowerCase() === '!report') {
-            // Check if message is from allowed guild
-            if (message.guildId !== ALLOWED_GUILD_ID) return;
+            // Command works in all guilds now
             console.log('Staff report command detected:', message.content);
             const configPath = path.join(__dirname, '..', 'config.json');
             if (!fs.existsSync(configPath)) return;

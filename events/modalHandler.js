@@ -4,7 +4,7 @@ const path = require('path');
 const webhookLogger = require('../utils/webhookLogger');
 const Report = require('../models/Report');
 
-const ALLOWED_GUILD_ID = '1445391172750016534';
+// Bot now works in all guilds
 
 module.exports = {
     name: Events.InteractionCreate,
