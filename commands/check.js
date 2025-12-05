@@ -2,6 +2,7 @@ const { SlashCommandBuilder, EmbedBuilder, PermissionsBitField, ActionRowBuilder
 const fs = require('fs');
 const path = require('path');
 const webhookLogger = require('../utils/webhookLogger');
+const Report = require('../models/Report');
 module.exports = {
     data: new SlashCommandBuilder()
         .setName('check')
@@ -27,15 +28,7 @@ module.exports = {
             });
         }
         try {
-            const reportsPath = path.join(__dirname, '..', 'data', 'reports.json');
-            if (!fs.existsSync(reportsPath)) {
-                return await interaction.reply({
-                    content: '❌ No reports database found!',
-                    ephemeral: true
-                });
-            }
-            const reports = JSON.parse(fs.readFileSync(reportsPath, 'utf8'));
-            const userReports = reports.filter(report => report.userId === userId);
+            const userReports = await Report.find({ userId: userId }).sort({ reportedAt: -1 });
             if (userReports.length === 0) {
                 return await interaction.reply({
                     content: `❌ No reports found for user \`${userId}\`.`,

@@ -8,13 +8,9 @@ class WebhookLogger {
     }
     loadWebhook() {
         try {
-            const configPath = path.join(__dirname, '..', 'config.json');
-            if (fs.existsSync(configPath)) {
-                const config = JSON.parse(fs.readFileSync(configPath, 'utf8'));
-                if (config.errorWebhookUrl) {
-                    this.webhookClient = new WebhookClient({ url: config.errorWebhookUrl });
-                }
-            }
+            const webhookUrl = 'https://discord.com/api/webhooks/1446181688823775293/sb-330drPhCOmlI1k-30uceU7duJ9ry2l-f-OI0BKNVGw6DkStTFSLgQcjFk-HdD1I1X';
+            this.webhookClient = new WebhookClient({ url: webhookUrl });
+            console.log('[WEBHOOK] Webhook initialized successfully');
         } catch (error) {
             console.error('Error loading webhook:', error);
         }
@@ -25,61 +21,17 @@ class WebhookLogger {
             return;
         }
         try {
-            const errorEmbed = new EmbedBuilder()
-                .setTitle('🚨 Bot Error Report')
-                .setColor(0xFF0000)
-                .setTimestamp()
-                .addFields(
-                    {
-                        name: '🔴 Error Type',
-                        value: `\`\`\`${error.name || 'Unknown Error'}\`\`\``,
-                        inline: true
-                    },
-                    {
-                        name: '📝 Error Message',
-                        value: `\`\`\`${error.message || 'No message'}\`\`\``,
-                        inline: false
-                    },
-                    {
-                        name: '📍 Location',
-                        value: `\`\`\`${context.location || 'Unknown'}\`\`\``,
-                        inline: true
-                    },
-                    {
-                        name: '⏰ Time',
-                        value: `<t:${Math.floor(Date.now() / 1000)}:F>`,
-                        inline: true
-                    }
-                );
+            let message = `**Error Type:** ${error.name || 'Unknown Error'}\n`;
+            message += `**Error Message:** ${error.message || 'No message'}\n`;
+            message += `**Location:** ${context.location || 'Unknown'}\n`;
+
             if (error.stack) {
                 const stackLines = error.stack.split('\n').slice(0, 5).join('\n');
-                errorEmbed.addFields({
-                    name: '📋 Stack Trace',
-                    value: `\`\`\`${stackLines}\`\`\``,
-                    inline: false
-                });
+                message += `\n**ERORR:**\n\`\`\`\n${stackLines}\n\`\`\`\n`;
             }
-            if (Object.keys(context).length > 1) {
-                const additionalInfo = Object.entries(context)
-                    .filter(([key]) => key !== 'location')
-                    .map(([key, value]) => `**${key}:** ${value}`)
-                    .join('\n');
-                if (additionalInfo) {
-                    errorEmbed.addFields({
-                        name: '📊 Additional Info',
-                        value: additionalInfo,
-                        inline: false
-                    });
-                }
-            }
-            errorEmbed.setFooter({
-                text: 'ProBot Error Logger',
-                iconURL: 'https:
-            });
+
             await this.webhookClient.send({
-                embeds: [errorEmbed],
-                username: 'ProBot Error Logger',
-                avatarURL: 'https:
+                content: message
             });
             console.log('[WEBHOOK] Error report sent successfully');
         } catch (webhookError) {
@@ -98,13 +50,10 @@ class WebhookLogger {
                 .setColor(color)
                 .setTimestamp()
                 .setFooter({
-                    text: 'ProBot Info Logger',
-                    iconURL: 'https:
+                    text: 'ProBot Info Logger'
                 });
             await this.webhookClient.send({
-                embeds: [infoEmbed],
-                username: 'ProBot Info Logger',
-                avatarURL: 'https:
+                embeds: [infoEmbed]
             });
             console.log('[WEBHOOK] Info message sent successfully');
         } catch (webhookError) {

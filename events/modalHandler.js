@@ -1,11 +1,21 @@
-const { Events, EmbedBuilder } = require('discord.js');
+const { Events, EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle } = require('discord.js');
 const fs = require('fs');
 const path = require('path');
 const webhookLogger = require('../utils/webhookLogger');
+const Report = require('../models/Report');
+
+const ALLOWED_GUILD_ID = '1445391172750016534';
+
 module.exports = {
     name: Events.InteractionCreate,
     async execute(interaction) {
         if (!interaction.isModalSubmit()) return;
+
+        console.log('=== MODAL SUBMITTED ===');
+        console.log('Modal submitted with customId:', interaction.customId);
+
+        // No guild restrictions for modals
+
         try {
             const configPath = path.join(__dirname, '..', 'config.json');
             if (!fs.existsSync(configPath)) {
@@ -19,6 +29,8 @@ module.exports = {
                 await handleReportModal(interaction, config);
             } else if (interaction.customId === 'unblacklist_modal') {
                 await handleUnblacklistModal(interaction, config);
+            } else if (interaction.customId === 'staff_report_modal') {
+                await handleStaffReportModal(interaction, config);
             }
         } catch (error) {
             console.error('Modal handling error:', error);
@@ -130,26 +142,57 @@ async function handleReportModal(interaction, config) {
             return;
         }
         const reportId = `RPT-${Date.now().toString(36).toUpperCase()}-${Math.random().toString(36).substr(2, 5).toUpperCase()}`;
-        const report = {
+
+        console.log('Saving staff report:', {
             id: reportId,
-            userId: userId,
-            reason: reason,
-            proof: proof,
-            reportedBy: interaction.user.id,
-            reportedAt: new Date().toISOString(),
-            messageId: null, 
-            unblacklisted: false,
-            edits: [] 
-        };
-        reports.push(report);
-        fs.writeFileSync(reportsPath, JSON.stringify(reports, null, 2));
+            userId: reportedUserId,
+            reason: violationDetails,
+            proof: evidenceLink,
+            server: violationServer
+        });
+
+        try {
+            reports.push(report);
+            console.log('Reports after push:', reports.length);
+            fs.writeFileSync(reportsPath, JSON.stringify(reports, null, 2));
+            console.log('Staff report saved successfully to:', reportsPath);
+        } catch (saveError) {
+            console.error('Error saving staff report:', saveError);
+            return await interaction.editReply({
+                content: '❌ Error saving report to database.'
+            });
+        }
         const reportChannel = interaction.guild.channels.cache.get(config.reportChannelId);
         if (!reportChannel) {
             return await interaction.editReply({
                 content: '❌ Report channel does not exist!'
             });
         }
-        const titleMessage = await reportChannel.send(`🚫 Blacklist Report - User ${userId}`);
+        console.log('About to save report to database first...');
+        console.log('=== DATA BEING SAVED TO DATABASE ===');
+        console.log('Report object:', {
+            id: reportId,
+            userId: reportedUserId,
+            reason: violationDetails,
+            proof: evidenceLink,
+            server: violationServer
+        });
+
+        try {
+            fs.writeFileSync(reportsPath, JSON.stringify(reports, null, 2));
+            console.log('Report saved to database successfully');
+            console.log('Total reports in database:', reports.length);
+        } catch (saveError) {
+            console.error('Error saving report to database:', saveError);
+            return await interaction.editReply({
+                content: '❌ Error saving report to database.'
+            });
+        }
+
+        console.log('About to send report to channel:', reportChannel.name);
+        try {
+            const titleMessage = await reportChannel.send(`🚫 Blacklist Report - User ${userId}`);
+            console.log('Report title sent successfully');
         const reportEmbed = new EmbedBuilder()
             .setTitle('🚫 Blacklist Report')
             .setDescription('A new user has been reported and added to the blacklist.')
@@ -190,9 +233,24 @@ async function handleReportModal(interaction, config) {
                 inline: false
             });
         }
-        const embedMessage = await reportChannel.send({ embeds: [reportEmbed] });
-        report.messageId = embedMessage.id;
-        fs.writeFileSync(reportsPath, JSON.stringify(reports, null, 2));
+            const embedMessage = await reportChannel.send({
+                embeds: [reportEmbed],
+                components: [actionRow]
+            });
+            console.log('Report embed sent successfully');
+            report.messageId = embedMessage.id;
+
+            // Update the saved report with messageId
+            try {
+                fs.writeFileSync(reportsPath, JSON.stringify(reports, null, 2));
+                console.log('Report updated with messageId');
+            } catch (updateError) {
+                console.error('Error updating report with messageId:', updateError);
+            }
+        } catch (sendError) {
+            console.error('Error sending report to channel:', sendError);
+            // Report is already saved to database even if sending failed
+        }
         await updateGlobalStats(interaction.guild, config);
         await interaction.editReply({
             content: `✅ Report sent successfully!`
@@ -395,6 +453,257 @@ async function updateGlobalStats(guild, config) {
             location: 'updateGlobalStats',
             guildId: guild.id,
             action: 'update_global_stats'
+        });
+    }
+}
+
+async function handleStaffReportModal(interaction, config) {
+    console.log('=== STARTING handleStaffReportModal ===');
+    console.log('handleStaffReportModal called with customId:', interaction.customId);
+    console.log('Interaction details:', {
+        customId: interaction.customId,
+        guildId: interaction.guildId,
+        userId: interaction.user.id
+    });
+    await interaction.deferReply({ ephemeral: true });
+    console.log('Deferred reply successfully');
+
+    try {
+        const reportedUserId = interaction.fields.getTextInputValue('reported_user_id');
+        const violationDetails = interaction.fields.getTextInputValue('violation_details');
+        const evidenceLink = interaction.fields.getTextInputValue('evidence_link') || 'No evidence provided';
+        const violationServer = interaction.fields.getTextInputValue('violation_server') || 'Not specified';
+        const additionalDetails = interaction.fields.getTextInputValue('additional_details') || 'No additional details provided';
+
+        console.log('=== FORM DATA RECEIVED ===');
+        console.log('reportedUserId:', reportedUserId);
+        console.log('violationDetails:', violationDetails);
+        console.log('evidenceLink:', evidenceLink);
+        console.log('violationServer:', violationServer);
+        console.log('additionalDetails:', additionalDetails);
+
+        // Validate user ID format
+        if (!/^\d{15,20}$/.test(reportedUserId)) {
+            return await interaction.editReply({
+                content: '❌ Invalid User ID! Please enter a valid Discord user ID (15-20 digits).'
+            });
+        }
+
+        // Check if user is already in blacklist
+        let isBlacklisted = false;
+        try {
+            const existingReport = await Report.findOne({
+                userId: reportedUserId,
+                unblacklisted: false
+            });
+            isBlacklisted = !!existingReport;
+            console.log('isBlacklisted result for user', reportedUserId, ':', isBlacklisted);
+        } catch (error) {
+            console.error('Error checking blacklist status:', error);
+            webhookLogger.sendError(error, {
+                location: 'modalHandler - blacklist check',
+                userId: reportedUserId,
+                action: 'check_blacklist_status'
+            });
+        }
+
+        if (isBlacklisted) {
+            // User is already blacklisted - inform staff member
+            return await interaction.editReply({
+                content: `This user is already in the blacklist.`
+            });
+        }
+
+        // User is not blacklisted - send report to staff channel
+        console.log('About to save staff report to database');
+        console.log('isBlacklisted check result:', isBlacklisted);
+
+        if (isBlacklisted) {
+            console.log('User is blacklisted, returning without saving');
+            return await interaction.editReply({
+                content: `This user is already in the blacklist.`
+            });
+        }
+
+        console.log('User is not blacklisted, proceeding with save');
+
+        // SAVE TO DATABASE FIRST - BEFORE ANYTHING ELSE
+        const reportId = `RPT-${Date.now().toString(36).toUpperCase()}-${Math.random().toString(36).substr(2, 5).toUpperCase()}`;
+
+        console.log('About to save report to database first...');
+        console.log('=== DATA BEING SAVED TO DATABASE ===');
+        console.log('Report object:', {
+            id: reportId,
+            userId: reportedUserId,
+            reason: violationDetails,
+            proof: evidenceLink,
+            server: violationServer
+        });
+
+        try {
+            const newReport = new Report({
+                id: reportId,
+                userId: reportedUserId,
+                reason: violationDetails,
+                proof: evidenceLink,
+                server: violationServer,
+                reportedBy: interaction.user.id,
+                messageId: null,
+                unblacklisted: false,
+                approved: false,
+                edits: []
+            });
+
+            await newReport.save();
+            console.log('Report saved to database successfully');
+        } catch (saveError) {
+            console.error('Error saving report to database:', saveError);
+            webhookLogger.sendError(saveError, {
+                location: 'modalHandler - save report',
+                userId: reportedUserId,
+                action: 'save_report'
+            });
+            return await interaction.editReply({
+                content: '❌ Error saving report to database.'
+            });
+        }
+
+        // NOW SEND TO CHANNEL (AFTER DATABASE SAVE)
+        console.log('About to find staff channel');
+        const staffChannelId = '1446252890502205471'; // Staff reports channel
+
+        // Find channel across all guilds the bot is in
+        let staffChannel = null;
+        for (const guild of interaction.client.guilds.cache.values()) {
+            const channel = guild.channels.cache.get(staffChannelId);
+            if (channel) {
+                staffChannel = channel;
+                console.log(`Found staff channel: ${channel.name} in guild: ${guild.name}`);
+                break;
+            }
+        }
+
+        if (!staffChannel) {
+            console.error(`[ERROR] Staff reports channel ${staffChannelId} not found in any guild`);
+            console.log('Available guilds and channels:');
+            for (const guild of interaction.client.guilds.cache.values()) {
+                console.log(`Guild: ${guild.name} (${guild.id})`);
+                const channels = guild.channels.cache.filter(ch => ch.type === 0).map(ch => `${ch.name} (${ch.id})`);
+                console.log(`Text channels: ${channels.join(', ')}`);
+            }
+            webhookLogger.sendError(new Error(`Staff reports channel ${staffChannelId} not found`), {
+                location: 'handleStaffReportModal',
+                userId: interaction.user.id,
+                staffChannelId: staffChannelId,
+                action: 'channel_not_found'
+            });
+            return await interaction.editReply({
+                content: '❌ Staff reports channel not found! Please contact an administrator.'
+            });
+        }
+
+        console.log('Staff channel found, proceeding to build embed');
+        const reportEmbed = new EmbedBuilder()
+            .setTitle('Staff Violation Report')
+            .setDescription('A new violation report has been submitted by staff.')
+            .setColor(0xFF4444);
+
+        // Add image if evidence link is provided
+        if (evidenceLink !== 'No evidence provided' &&
+            (evidenceLink.includes('http') || evidenceLink.includes('https')) &&
+            (evidenceLink.match(/\.(jpeg|jpg|gif|png|webp)/i) ||
+             evidenceLink.includes('cdn.discordapp.com') ||
+             evidenceLink.includes('media.discordapp.net'))) {
+            reportEmbed.setImage(evidenceLink);
+        }
+
+        reportEmbed.addFields(
+                {
+                    name: 'Reported User',
+                    value: `**User ID:** \`${reportedUserId}\`\n**Status:** Not in blacklist`,
+                    inline: true
+                },
+                {
+                    name: 'Reporting Staff',
+                    value: `**Staff Member:** <@${interaction.user.id}>\n**Staff ID:** \`${interaction.user.id}\``,
+                    inline: true
+                },
+                {
+                    name: 'Violation Details',
+                    value: violationDetails,
+                    inline: false
+                },
+                {
+                    name: 'Evidence',
+                    value: evidenceLink !== 'No evidence provided' ? evidenceLink : 'No evidence provided',
+                    inline: true
+                },
+                {
+                    name: 'Server',
+                    value: violationServer,
+                    inline: true
+                },
+                {
+                    name: 'Additional Details',
+                    value: additionalDetails.length > 200 ? additionalDetails.substring(0, 200) + '...' : additionalDetails,
+                    inline: false
+                }
+            )
+            .setFooter({
+                text: 'Staff Report System • ProBot',
+                iconURL: interaction.guild.iconURL({ dynamic: true })
+            })
+            .setTimestamp();
+
+        console.log('Embed fully built, proceeding to send message');
+
+        // Add buttons for additional actions
+        const actionRow = new ActionRowBuilder()
+            .addComponents(
+                new ButtonBuilder()
+                    .setCustomId(`staff_add_blacklist_${reportedUserId}`)
+                    .setLabel('➕ Add to Blacklist')
+                    .setStyle(ButtonStyle.Success),
+                new ButtonBuilder()
+                    .setCustomId(`staff_dismiss_report_${reportedUserId}`)
+                    .setLabel('❌ Dismiss Report')
+                    .setStyle(ButtonStyle.Secondary)
+            );
+
+        console.log('About to send message to staff channel');
+        console.log('About to send message to staff channel');
+        const staffMessage = await staffChannel.send({
+            embeds: [reportEmbed],
+            components: [actionRow]
+        });
+        console.log('Message sent successfully to staff channel, message ID:', staffMessage.id);
+
+        // Save the staff report message ID to the report for later updates
+        console.log('About to save staffMessageId to report');
+        report.staffMessageId = staffMessage.id;
+        console.log('staffMessageId set to:', report.staffMessageId);
+        console.log('Saving staff message ID:', staffMessage.id, 'for report:', reportId);
+        try {
+            fs.writeFileSync(reportsPath, JSON.stringify(reports, null, 2));
+            console.log('Staff report message ID saved successfully');
+        } catch (updateError) {
+            console.error('Error saving staff message ID:', updateError);
+        }
+
+        // Confirm to staff member
+        await interaction.editReply({
+            content: '✅ Report Submitted Successfully'
+        });
+
+    } catch (error) {
+        console.error('Error processing staff report:', error);
+        await webhookLogger.sendError(error, {
+            location: 'handleStaffReportModal',
+            userId: interaction.user.id,
+            action: 'staff_report_submission'
+        });
+        await interaction.editReply({
+            content: '❌ An error occurred while processing your report!'
         });
     }
 }

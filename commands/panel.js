@@ -1,6 +1,8 @@
 const { SlashCommandBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, EmbedBuilder, PermissionsBitField } = require('discord.js');
 const fs = require('fs');
 const path = require('path');
+const webhookLogger = require('../utils/webhookLogger');
+const Report = require('../models/Report');
 module.exports = {
     data: new SlashCommandBuilder()
         .setName('panel')
@@ -81,11 +83,9 @@ module.exports = {
 };
 async function updatePanelStats(interaction) {
     try {
-        const reportsPath = path.join(__dirname, '..', 'data', 'reports.json');
-        const reports = fs.existsSync(reportsPath) ? JSON.parse(fs.readFileSync(reportsPath, 'utf8')) : [];
-        const totalReports = reports.length;
-        const activeBlacklists = reports.filter(r => !r.unblacklisted).length;
-        const unblacklisted = reports.filter(r => r.unblacklisted).length;
+        const totalReports = await Report.countDocuments();
+        const activeBlacklists = await Report.countDocuments({ unblacklisted: false });
+        const unblacklisted = await Report.countDocuments({ unblacklisted: true });
         const embed = new EmbedBuilder()
             .setTitle('🛡️ ProBot Blacklist Management System')
             .setDescription('Select an action below to manage user reports:')
@@ -121,5 +121,10 @@ async function updatePanelStats(interaction) {
         await interaction.editReply({ embeds: [embed] });
     } catch (error) {
         console.error('Error updating statistics:', error);
+        webhookLogger.sendError(error, {
+            location: 'panel command - statistics update',
+            userId: interaction.user.id,
+            action: 'update_panel_statistics'
+        });
     }
 }
