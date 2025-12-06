@@ -150,7 +150,7 @@ async function handleReportModal(interaction, config) {
 
         console.log('Saving staff report:', {
             id: reportId,
-            userId: reportedUserId,
+            userId: userId,
             reason: violationDetails,
             proof: evidenceLink,
             server: violationServer
@@ -177,7 +177,7 @@ async function handleReportModal(interaction, config) {
         console.log('=== DATA BEING SAVED TO DATABASE ===');
         console.log('Report object:', {
             id: reportId,
-            userId: reportedUserId,
+            userId: userId,
             reason: violationDetails,
             proof: evidenceLink,
             server: violationServer
