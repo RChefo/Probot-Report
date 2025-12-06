@@ -30,7 +30,65 @@ module.exports = {
                 });
             }
 
-            if (interaction.customId === 'report_user') {
+            if (interaction.customId === 'staff_report_button') {
+                const modal = new ModalBuilder()
+                    .setCustomId('staff_report_modal')
+                    .setTitle('🚨 Staff Violation Report');
+
+                const userIdInput = new TextInputBuilder()
+                    .setCustomId('staff_user_id')
+                    .setLabel('Reported User ID')
+                    .setStyle(TextInputStyle.Short)
+                    .setPlaceholder('Enter the user ID being reported')
+                    .setRequired(true)
+                    .setMinLength(15)
+                    .setMaxLength(20);
+
+                const userTagInput = new TextInputBuilder()
+                    .setCustomId('staff_user_tag')
+                    .setLabel('Reported User Tag')
+                    .setStyle(TextInputStyle.Short)
+                    .setPlaceholder('Example: elchef.')
+                    .setRequired(true)
+                    .setMinLength(3)
+                    .setMaxLength(37);
+
+                const violationInput = new TextInputBuilder()
+                    .setCustomId('staff_violation')
+                    .setLabel('Type of Violation')
+                    .setStyle(TextInputStyle.Short)
+                    .setPlaceholder('buying, Selling credits, Suspicious activity, etc.')
+                    .setRequired(true)
+                    .setMinLength(3)
+                    .setMaxLength(50);
+
+                const detailsInput = new TextInputBuilder()
+                    .setCustomId('staff_details')
+                    .setLabel('Violation Details')
+                    .setStyle(TextInputStyle.Paragraph)
+                    .setPlaceholder('Provide detailed description of the violation, including server links if available')
+                    .setRequired(false)
+                    .setMaxLength(1000);
+
+                const evidenceInput = new TextInputBuilder()
+                    .setCustomId('staff_evidence')
+                    .setLabel('Evidence Links')
+                    .setStyle(TextInputStyle.Short)
+                    .setPlaceholder('Image/video links or message links as evidence (Required)')
+                    .setRequired(true)
+                    .setMinLength(10)
+                    .setMaxLength(500);
+
+                const firstActionRow = new ActionRowBuilder().addComponents(userIdInput);
+                const secondActionRow = new ActionRowBuilder().addComponents(userTagInput);
+                const thirdActionRow = new ActionRowBuilder().addComponents(violationInput);
+                const fourthActionRow = new ActionRowBuilder().addComponents(detailsInput);
+                const fifthActionRow = new ActionRowBuilder().addComponents(evidenceInput);
+
+                modal.addComponents(firstActionRow, secondActionRow, thirdActionRow, fourthActionRow, fifthActionRow);
+
+                await interaction.showModal(modal);
+            } else if (interaction.customId === 'report_user') {
                 const modal = new ModalBuilder()
                     .setCustomId('report_modal')
                     .setTitle('🚫 Report User');
@@ -167,19 +225,47 @@ module.exports = {
                     ephemeral: true
                 });
             } else if (interaction.customId.startsWith('confirm_add_blacklist_')) {
+
+                // Prevent duplicate processing with a global flag
+                if (global.processingBlacklistAdd && global.processingBlacklistAdd[interaction.id]) {
+                    console.log('Already processing this blacklist add, skipping duplicate');
+                    return;
+                }
+
+                // Set processing flag
+                if (!global.processingBlacklistAdd) global.processingBlacklistAdd = {};
+                global.processingBlacklistAdd[interaction.id] = true;
+
+                // Track if interaction was responded to
+                let interactionResponded = false;
+
+                // Check if this interaction was already processed
+                if (interaction.deferred || interaction.replied) {
+                    console.log('Interaction already processed, skipping');
+                    delete global.processingBlacklistAdd[interaction.id];
+                    return;
+                }
+
                 const userId = interaction.customId.split('_')[3];
 
                 // Get the original report data
                 let originalReportData = null;
+                let latestReport = null;
+
                 try {
-                    const latestReport = await Report.findOne({
+                    latestReport = await Report.findOne({
                         userId: userId,
                         unblacklisted: false
                     }).sort({ reportedAt: -1 });
 
                     if (latestReport) {
+                        // Parse the combined reason field
+                        const reasonParts = latestReport.reason.split('\n');
+                        const violationType = reasonParts.find(p => p.startsWith('**Type of Violation:**'))?.replace('**Type of Violation:** ', '') || 'Not specified';
+                        const violationDetails = reasonParts.find(p => p.startsWith('**Violation Details:**'))?.replace('**Violation Details:** ', '') || 'No details provided';
+
                         originalReportData = {
-                            violationDetails: latestReport.reason || 'No reason provided',
+                            violationDetails: `${violationType} - ${violationDetails}`,
                             evidenceLink: latestReport.proof || 'No evidence provided',
                             violationServer: latestReport.server || 'Not specified'
                         };
@@ -188,7 +274,7 @@ module.exports = {
                     console.error('Error fetching report data:', error);
                 }
 
-                // Create new report
+                // Create new approved report
                 const reportId = `RPT-${Date.now().toString(36).toUpperCase()}-${Math.random().toString(36).substr(2, 5).toUpperCase()}`;
 
                 try {
@@ -206,23 +292,39 @@ module.exports = {
                     });
 
                     await newReport.save();
+                    console.log(`New blacklist report created: ${reportId}`);
                 } catch (saveError) {
                     console.error('Error saving blacklist report:', saveError);
+                    interactionResponded = true;
+                    return await interaction.update({
+                        content: '❌ Error saving the blacklist report to database.',
+                        embeds: [],
+                        components: []
+                    });
                 }
 
                 // Send report to report channel
+                console.log('Looking for report channel:', config.reportChannelId);
                 let reportChannel = null;
                 for (const guild of interaction.client.guilds.cache.values()) {
+                    console.log('Checking guild:', guild.name, 'ID:', guild.id);
                     const channel = guild.channels.cache.get(config.reportChannelId);
                     if (channel) {
                         reportChannel = channel;
+                        console.log('Found report channel:', channel.name, 'in guild:', guild.name);
                         break;
                     }
                 }
 
+                console.log('Report channel result:', reportChannel ? 'Found' : 'Not found');
+
                 if (reportChannel) {
                     try {
+                        console.log('Sending title message...');
                         const titleMessage = await reportChannel.send(`🚫 Blacklist Report - User ${userId}`);
+                        console.log('Title message sent, ID:', titleMessage.id);
+
+                        console.log('Building report embed...');
                         const reportEmbed = new EmbedBuilder()
                             .setTitle('🚫 Blacklist Report')
                             .setDescription('A new user has been reported and added to the blacklist.')
@@ -230,7 +332,7 @@ module.exports = {
                             .addFields(
                                 {
                                     name: 'Target User',
-                                    value: `**ID:** \`${userId}\`\n**Status:** 🔴 Blacklisted`,
+                                    value: `**ID:** \`${userId}\`\n**Tag:** \`${latestReport ? latestReport.userTag || 'Unknown' : 'Unknown'}\`\n**Status:** 🔴 Blacklisted`,
                                     inline: true
                                 },
                                 {
@@ -270,13 +372,17 @@ module.exports = {
                             reportEmbed.setImage(originalReportData.evidenceLink);
                         }
 
+                        console.log('About to send embed to report channel');
                         const embedMessage = await reportChannel.send({ embeds: [reportEmbed] });
+                        console.log('Embed sent successfully, message ID:', embedMessage.id);
+
                         // Update messageId in database
                         try {
                             await Report.findOneAndUpdate(
                                 { id: reportId },
                                 { messageId: embedMessage.id }
                             );
+                            console.log('Message ID updated in database');
                         } catch (updateError) {
                             console.error('Error updating messageId:', updateError);
                         }
@@ -285,11 +391,11 @@ module.exports = {
                     }
                 }
 
-                // Update global stats
-                const updateGlobalStats = require('../utils/updateGlobalStats');
-                if (updateGlobalStats) {
-                    await updateGlobalStats(interaction.guild, config);
-                }
+                // Update global stats (disabled due to message not found errors)
+                // const updateGlobalStats = require('../utils/updateGlobalStats');
+                // if (updateGlobalStats) {
+                //     await updateGlobalStats(interaction.guild, config);
+                // }
 
                 // Update the original staff report message
                 try {
@@ -350,10 +456,17 @@ module.exports = {
                     console.error('Error updating original message:', updateError);
                 }
 
-                await interaction.reply({
-                    content: '✅ User added to blacklist successfully.',
-                    ephemeral: true
-                });
+                // Update the confirmation message with success (only if not already responded)
+                if (!interactionResponded) {
+                    await interaction.update({
+                        content: '✅ User added to blacklist successfully.',
+                        embeds: [],
+                        components: []
+                    });
+                }
+
+                // Clear processing flag
+                delete global.processingBlacklistAdd[interaction.id];
             } else if (interaction.customId === 'cancel_action') {
                 await interaction.update({
                     content: 'Cancelled',
@@ -362,6 +475,12 @@ module.exports = {
             }
         } catch (error) {
             console.error('Error in button handler:', error);
+
+            // Clear processing flag on error
+            if (global.processingBlacklistAdd && global.processingBlacklistAdd[interaction.id]) {
+                delete global.processingBlacklistAdd[interaction.id];
+            }
+
             webhookLogger.sendError(error, {
                 location: 'buttonHandler event',
                 customId: interaction.customId,

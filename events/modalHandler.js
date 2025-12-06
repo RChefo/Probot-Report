@@ -34,11 +34,16 @@ module.exports = {
             }
         } catch (error) {
             console.error('Modal handling error:', error);
+            // Don't reply if already replied, deferred, or if deferReply was used
             if (!interaction.replied && !interaction.deferred) {
-                await interaction.reply({
-                    content: '❌ An unexpected error occurred. Please try again.',
-                    ephemeral: true
-                });
+                try {
+                    await interaction.reply({
+                        content: '❌ An unexpected error occurred. Please try again.',
+                        ephemeral: true
+                    });
+                } catch (replyError) {
+                    console.error('Failed to send error reply:', replyError);
+                }
             }
         }
     },
@@ -65,7 +70,7 @@ async function updateExistingReportEmbed(interaction, config, report) {
         if (reasonFieldIndex !== -1) {
             updatedEmbed.data.fields[reasonFieldIndex] = {
                 name: 'Blacklist Details',
-                value: `**Reason:** ${report.reason}`,
+                value: `**** ${report.reason}`,
                 inline: false
             };
         }
@@ -210,7 +215,7 @@ async function handleReportModal(interaction, config) {
                 },
                 {
                     name: 'Blacklist Details',
-                    value: `**Reason:** ${reason}`,
+                    value: `**** ${reason}`,
                     inline: false
                 }
             )
@@ -469,18 +474,18 @@ async function handleStaffReportModal(interaction, config) {
     console.log('Deferred reply successfully');
 
     try {
-        const reportedUserId = interaction.fields.getTextInputValue('reported_user_id');
-        const violationDetails = interaction.fields.getTextInputValue('violation_details');
-        const evidenceLink = interaction.fields.getTextInputValue('evidence_link') || 'No evidence provided';
-        const violationServer = interaction.fields.getTextInputValue('violation_server') || 'Not specified';
-        const additionalDetails = interaction.fields.getTextInputValue('additional_details') || 'No additional details provided';
+        const reportedUserId = interaction.fields.getTextInputValue('staff_user_id');
+        const reportedUserTag = interaction.fields.getTextInputValue('staff_user_tag');
+        const violationType = interaction.fields.getTextInputValue('staff_violation');
+        const violationDetails = interaction.fields.getTextInputValue('staff_details') || 'No additional details provided';
+        const evidenceLink = interaction.fields.getTextInputValue('staff_evidence');
 
         console.log('=== FORM DATA RECEIVED ===');
         console.log('reportedUserId:', reportedUserId);
+        console.log('reportedUserTag:', reportedUserTag);
+        console.log('violationType:', violationType);
         console.log('violationDetails:', violationDetails);
         console.log('evidenceLink:', evidenceLink);
-        console.log('violationServer:', violationServer);
-        console.log('additionalDetails:', additionalDetails);
 
         // Validate user ID format
         if (!/^\d{15,20}$/.test(reportedUserId)) {
@@ -489,39 +494,29 @@ async function handleStaffReportModal(interaction, config) {
             });
         }
 
-        // Check if user is already in blacklist
-        let isBlacklisted = false;
+        // Check if user is already approved in blacklist
+        let isApprovedBlacklisted = false;
         try {
-            const existingReport = await Report.findOne({
+            const existingApprovedReport = await Report.findOne({
                 userId: reportedUserId,
-                unblacklisted: false
+                unblacklisted: false,
+                approved: true
             });
-            isBlacklisted = !!existingReport;
-            console.log('isBlacklisted result for user', reportedUserId, ':', isBlacklisted);
+            isApprovedBlacklisted = !!existingApprovedReport;
+            console.log('isApprovedBlacklisted result for user', reportedUserId, ':', isApprovedBlacklisted);
         } catch (error) {
-            console.error('Error checking blacklist status:', error);
+            console.error('Error checking approved blacklist status:', error);
             webhookLogger.sendError(error, {
-                location: 'modalHandler - blacklist check',
+                location: 'modalHandler - approved blacklist check',
                 userId: reportedUserId,
-                action: 'check_blacklist_status'
+                action: 'check_approved_blacklist_status'
             });
         }
 
-        if (isBlacklisted) {
-            // User is already blacklisted - inform staff member
+        if (isApprovedBlacklisted) {
+            // User is already approved in blacklist - prevent new report
             return await interaction.editReply({
-                content: `This user is already in the blacklist.`
-            });
-        }
-
-        // User is not blacklisted - send report to staff channel
-        console.log('About to save staff report to database');
-        console.log('isBlacklisted check result:', isBlacklisted);
-
-        if (isBlacklisted) {
-            console.log('User is blacklisted, returning without saving');
-            return await interaction.editReply({
-                content: `This user is already in the blacklist.`
+                content: `❌ This user is already in the blacklist and cannot submit new reports.`
             });
         }
 
@@ -532,23 +527,33 @@ async function handleStaffReportModal(interaction, config) {
 
         console.log('About to save report to database first...');
         console.log('=== DATA BEING SAVED TO DATABASE ===');
+
+        // Combine all data into reason field
+        const fullReason = `**Type of Violation:** ${violationType}\n**Violation Details:** ${violationDetails}`;
+
         console.log('Report object:', {
             id: reportId,
             userId: reportedUserId,
-            reason: violationDetails,
-            proof: evidenceLink,
-            server: violationServer
+            userTag: reportedUserTag,
+            reason: fullReason,
+            violationType: violationType,
+            violationDetails: violationDetails,
+            evidenceLink: evidenceLink,
+            reportedBy: interaction.user.id
         });
 
         try {
             const newReport = new Report({
                 id: reportId,
                 userId: reportedUserId,
-                reason: violationDetails,
+                userTag: reportedUserTag,
+                reason: fullReason,
+                violationType: violationType,
+                violationDetails: violationDetails,
                 proof: evidenceLink,
-                server: violationServer,
                 reportedBy: interaction.user.id,
                 messageId: null,
+                staffMessageId: null,
                 unblacklisted: false,
                 approved: false,
                 edits: []
@@ -620,7 +625,7 @@ async function handleStaffReportModal(interaction, config) {
         reportEmbed.addFields(
                 {
                     name: 'Reported User',
-                    value: `**User ID:** \`${reportedUserId}\`\n**Status:** Not in blacklist`,
+                    value: `**User ID:** \`${reportedUserId}\`\n**User Tag:** \`${reportedUserTag}\`\n**Status:** Not in blacklist`,
                     inline: true
                 },
                 {
@@ -629,28 +634,13 @@ async function handleStaffReportModal(interaction, config) {
                     inline: true
                 },
                 {
-                    name: 'Violation Details',
-                    value: violationDetails,
-                    inline: false
-                },
-                {
-                    name: 'Evidence',
-                    value: evidenceLink !== 'No evidence provided' ? evidenceLink : 'No evidence provided',
-                    inline: true
-                },
-                {
-                    name: 'Server',
-                    value: violationServer,
-                    inline: true
-                },
-                {
-                    name: 'Additional Details',
-                    value: additionalDetails.length > 200 ? additionalDetails.substring(0, 200) + '...' : additionalDetails,
+                    name: 'Blacklist Details',
+                    value: `**Type:** ${violationType}\n**Details:** ${violationDetails.length > 300 ? violationDetails.substring(0, 300) + '...' : violationDetails}`,
                     inline: false
                 }
             )
             .setFooter({
-                text: 'Staff Report System • ProBot',
+                text: 'Staff Report System',
                 iconURL: interaction.guild.iconURL({ dynamic: true })
             })
             .setTimestamp();
@@ -679,15 +669,15 @@ async function handleStaffReportModal(interaction, config) {
         console.log('Message sent successfully to staff channel, message ID:', staffMessage.id);
 
         // Save the staff report message ID to the report for later updates
-        console.log('About to save staffMessageId to report');
-        report.staffMessageId = staffMessage.id;
-        console.log('staffMessageId set to:', report.staffMessageId);
-        console.log('Saving staff message ID:', staffMessage.id, 'for report:', reportId);
+        console.log('About to save staffMessageId to MongoDB report');
         try {
-            fs.writeFileSync(reportsPath, JSON.stringify(reports, null, 2));
-            console.log('Staff report message ID saved successfully');
+            await Report.findOneAndUpdate(
+                { id: reportId },
+                { staffMessageId: staffMessage.id }
+            );
+            console.log('Staff report message ID saved to MongoDB successfully:', staffMessage.id);
         } catch (updateError) {
-            console.error('Error saving staff message ID:', updateError);
+            console.error('Error saving staff message ID to MongoDB:', updateError);
         }
 
         // Confirm to staff member

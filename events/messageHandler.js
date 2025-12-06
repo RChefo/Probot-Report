@@ -139,6 +139,108 @@ module.exports = {
             }
         }
 
+        // Check for database cleanup command
+        if (message.content.toLowerCase() === '!cleandb') {
+            console.log('Database cleanup command detected');
+            const configPath = path.join(__dirname, '..', 'config.json');
+            if (!fs.existsSync(configPath)) return;
+
+            const config = JSON.parse(fs.readFileSync(configPath, 'utf8'));
+            const isAdmin = message.member.permissions.has('Administrator') ||
+                           (config.adminRoleId && message.member.roles.cache.has(config.adminRoleId)) ||
+                           (config.adminUserIds && config.adminUserIds.includes(message.author.id));
+
+            if (!isAdmin) {
+                return await message.reply({
+                    content: '❌ This command is for administrators only!',
+                    ephemeral: true
+                });
+            }
+
+            try {
+                // Import Report model
+                const Report = require('../models/Report');
+
+                // Confirm cleanup
+                const confirmEmbed = new EmbedBuilder()
+                    .setTitle('🗑️ Database Cleanup Confirmation')
+                    .setDescription('⚠️ **WARNING:** This will delete ALL reports from the database!\n\n**This action cannot be undone!**\n\nReact with ✅ to confirm or ❌ to cancel.')
+                    .setColor(0xFF4444)
+                    .setFooter({
+                        text: 'ProBot Database Management',
+                        iconURL: message.guild.iconURL({ dynamic: true })
+                    })
+                    .setTimestamp();
+
+                const confirmMessage = await message.reply({ embeds: [confirmEmbed] });
+
+                // Add reactions
+                await confirmMessage.react('✅');
+                await confirmMessage.react('❌');
+
+                // Wait for reaction
+                const filter = (reaction, user) => {
+                    return ['✅', '❌'].includes(reaction.emoji.name) && user.id === message.author.id;
+                };
+
+                const collected = await confirmMessage.awaitReactions({
+                    filter,
+                    max: 1,
+                    time: 30000,
+                    errors: ['time']
+                });
+
+                const reaction = collected.first();
+
+                if (reaction.emoji.name === '✅') {
+                    // Delete all reports
+                    const deleteResult = await Report.deleteMany({});
+
+                    const successEmbed = new EmbedBuilder()
+                        .setTitle('✅ Database Cleaned Successfully')
+                        .setDescription(`🗑️ **Deleted ${deleteResult.deletedCount} reports** from the database.\n\nThe database is now clean and ready for production use.`)
+                        .setColor(0x00FF00)
+                        .setFooter({
+                            text: 'ProBot Database Management',
+                            iconURL: message.guild.iconURL({ dynamic: true })
+                        })
+                        .setTimestamp();
+
+                    await confirmMessage.edit({ embeds: [successEmbed] });
+                    await confirmMessage.reactions.removeAll();
+
+                } else {
+                    const cancelEmbed = new EmbedBuilder()
+                        .setTitle('❌ Database Cleanup Cancelled')
+                        .setDescription('The database cleanup operation has been cancelled.\n\nNo data was deleted.')
+                        .setColor(0xFFA500)
+                        .setFooter({
+                            text: 'ProBot Database Management',
+                            iconURL: message.guild.iconURL({ dynamic: true })
+                        })
+                        .setTimestamp();
+
+                    await confirmMessage.edit({ embeds: [cancelEmbed] });
+                    await confirmMessage.reactions.removeAll();
+                }
+
+            } catch (error) {
+                console.error('Error in database cleanup:', error);
+                webhookLogger.sendError(error, {
+                    location: 'messageHandler - database cleanup command',
+                    userId: message.author.id,
+                    guildId: message.guild?.id,
+                    action: 'database_cleanup'
+                });
+
+                await message.reply({
+                    content: '❌ An error occurred while cleaning the database.',
+                    ephemeral: true
+                });
+            }
+            return;
+        }
+
         // Check for staff reports statistics command
         if (message.content.toLowerCase() === '!staffstats') {
             console.log('Staff reports stats command detected');

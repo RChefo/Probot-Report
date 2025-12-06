@@ -10,6 +10,10 @@ const connectDB = async () => {
         console.log('[DATABASE] MongoDB Connected Successfully');
     } catch (error) {
         console.error('[DATABASE] MongoDB Connection Error:', error);
+        console.log('[DATABASE] Please check:');
+        console.log('1. MongoDB Atlas IP whitelist includes your IP');
+        console.log('2. MongoDB connection string is correct');
+        console.log('3. Internet connection is stable');
         process.exit(1);
     }
 };
