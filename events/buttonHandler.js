@@ -379,9 +379,6 @@ module.exports = {
                                     inline: false
                                 }
                             )
-                            .setFooter({
-                                iconURL: interaction.guild.iconURL({ dynamic: true })
-                            })
                             .setTimestamp();
 
                         // Add image if evidence is provided
