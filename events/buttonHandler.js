@@ -19,15 +19,23 @@ module.exports = {
             const configPath = path.join(__dirname, '..', 'config.json');
             if (!fs.existsSync(configPath)) return;
             const config = JSON.parse(fs.readFileSync(configPath, 'utf8'));
-            const isAdmin = interaction.member?.permissions?.has('Administrator') ||
-                           (config.adminRoleId && interaction.member?.roles?.cache?.has(config.adminRoleId)) ||
-                           (config.adminUserIds && config.adminUserIds.includes(interaction.user.id));
 
-            if (!isAdmin) {
-                return await interaction.reply({
-                    content: '❌ This command is for administrators only!',
-                    ephemeral: true
-                });
+            // Check if this is an admin-only button
+            const isAdminButton = interaction.customId.startsWith('staff_add_blacklist_') ||
+                                 interaction.customId.startsWith('confirm_add_blacklist_') ||
+                                 interaction.customId === 'staff_dismiss_report_';
+
+            if (isAdminButton) {
+                const isAdmin = interaction.member?.permissions?.has('Administrator') ||
+                               (config.adminRoleId && interaction.member?.roles?.cache?.has(config.adminRoleId)) ||
+                               (config.adminUserIds && config.adminUserIds.includes(interaction.user.id));
+
+                if (!isAdmin) {
+                    return await interaction.reply({
+                        content: '❌ This action is for administrators only!',
+                        ephemeral: true
+                    });
+                }
             }
 
             if (interaction.customId === 'staff_report_button') {
