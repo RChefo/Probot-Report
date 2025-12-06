@@ -283,14 +283,14 @@ async function handleUnblacklistModal(interaction, config) {
     try {
         const reportsPath = path.join(__dirname, '..', 'data', 'reports.json');
         if (!fs.existsSync(reportsPath)) {
-            return await interaction.reply({
+            return await interaction.editReply({
                 content: '❌ No reports found!'
             });
         }
         let reports = JSON.parse(fs.readFileSync(reportsPath, 'utf8'));
         const reportIndex = reports.findIndex(r => r.userId === userId && !r.unblacklisted);
         if (reportIndex === -1) {
-            return await interaction.reply({
+            return await interaction.editReply({
                 content: '❌ No report found for this user or they are already unblacklisted!'
             });
         }
