@@ -151,9 +151,9 @@ async function handleReportModal(interaction, config) {
         console.log('Saving staff report:', {
             id: reportId,
             userId: userId,
-            reason: violationDetails,
-            proof: evidenceLink,
-            server: violationServer
+            reason: reason,
+            proof: proof,
+            server: 'Not specified'
         });
 
         try {
