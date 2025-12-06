@@ -47,7 +47,7 @@ module.exports = {
                     }
                 )
                 .setFooter({
-                    text: 'Staff Report System • ProBot',
+                    text: '',
                     iconURL: message.guild.iconURL({ dynamic: true })
                 })
                 .setTimestamp();
