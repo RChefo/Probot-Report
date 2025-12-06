@@ -274,7 +274,7 @@ async function handleReportModal(interaction, config) {
 }
 async function handleUnblacklistModal(interaction, config) {
     await interaction.deferReply({ ephemeral: true });
-    const userId = interaction.fields.getTextInputValue('user_id');
+    const userId = interaction.fields.getTextInputValue('unblacklist_user_id');
     if (!/^\d{15,20}$/.test(userId)) {
         return await interaction.editReply({
             content: '❌ Invalid User ID! Please enter a valid Discord user ID (15-20 digits).'
