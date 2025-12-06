@@ -15,10 +15,18 @@ module.exports = {
         try {
             if (!interaction.isButton()) return;
 
+            console.log(`Processing button: ${interaction.customId}`);
+
             // No server restrictions - buttons work in any server the bot is in
             const configPath = path.join(__dirname, '..', 'config.json');
-            if (!fs.existsSync(configPath)) return;
+            console.log(`Config path: ${configPath}`);
+            if (!fs.existsSync(configPath)) {
+                console.log('Config file not found');
+                return;
+            }
+            console.log('Reading config file...');
             const config = JSON.parse(fs.readFileSync(configPath, 'utf8'));
+            console.log('Config loaded successfully');
 
             // Check if this is an admin-only button
             const isAdminButton = interaction.customId.startsWith('staff_add_blacklist_') ||
