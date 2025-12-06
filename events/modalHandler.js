@@ -418,10 +418,6 @@ async function updateGlobalStats(guild, config) {
                     inline: false
                 }
             )
-            .setFooter({
-                text: '',
-                iconURL: guild.iconURL({ dynamic: true })
-            })
             .setTimestamp();
         try {
             const statsMessage = await statsChannel.messages.fetch(config.statsMessageId);
