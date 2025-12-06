@@ -112,9 +112,7 @@ module.exports = {
                             inline: false
                         }
                     )
-                    .setFooter({
-                        iconURL: message.guild.iconURL({ dynamic: true })
-                    })
+                   
                     .setTimestamp();
 
                 await message.channel.send({ embeds: [statsEmbed] });
@@ -354,9 +352,7 @@ module.exports = {
                             inline: false
                         }
                     )
-                    .setFooter({
-                        iconURL: message.guild.iconURL({ dynamic: true })
-                    })
+                  
                     .setTimestamp();
 
                 await message.channel.send({ embeds: [staffStatsEmbed] });

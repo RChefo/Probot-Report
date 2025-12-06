@@ -458,9 +458,7 @@ async function updateGlobalStats(guild, config) {
                                 inline: false
                             }
                         )
-                        .setFooter({
-                            iconURL: guild.iconURL({ dynamic: true })
-                        })
+                       
                         .setTimestamp();
                     const existingComponents = panelMessage.components;
                     await panelMessage.edit({ embeds: [panelEmbed], components: existingComponents });
