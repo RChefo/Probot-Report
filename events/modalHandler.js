@@ -246,10 +246,6 @@ async function handleReportModal(interaction, config) {
                     inline: false
                 }
             )
-            .setFooter({
-                text: '',
-                iconURL: interaction.guild.iconURL({ dynamic: true })
-            })
             .setTimestamp();
         if (proof !== 'No proof available') {
             reportEmbed.setImage(proof);
@@ -666,10 +662,6 @@ async function handleStaffReportModal(interaction, config) {
                     inline: false
                 }
             )
-            .setFooter({
-                text: '',
-                iconURL: interaction.guild.iconURL({ dynamic: true })
-            })
             .setTimestamp();
 
         console.log('Embed fully built, proceeding to send message');

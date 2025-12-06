@@ -46,10 +46,6 @@ module.exports = {
                         inline: false
                     }
                 )
-                .setFooter({
-                    text: '',
-                    iconURL: message.guild.iconURL({ dynamic: true })
-                })
                 .setTimestamp();
 
             const button = new ButtonBuilder()
