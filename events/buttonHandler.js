@@ -47,9 +47,7 @@ module.exports = {
             }
 
             if (interaction.customId === 'staff_report_button') {
-                // Use deferUpdate instead of deferReply for modal compatibility
-                await interaction.deferUpdate();
-
+                // No defer needed - showModal responds immediately
                 console.log('Creating staff report modal...');
                 const modal = new ModalBuilder()
                     .setCustomId('staff_report_modal')
