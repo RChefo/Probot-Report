@@ -205,9 +205,9 @@ async function handleReportModal(interaction, config) {
         console.log('Report object:', {
             id: reportId,
             userId: userId,
-            reason: violationDetails,
-            proof: evidenceLink,
-            server: violationServer
+            reason: reason,
+            proof: proof,
+            server: 'Not specified'
         });
 
         try {
