@@ -266,19 +266,15 @@ async function handleReportModal(interaction, config) {
             });
         }
             const embedMessage = await reportChannel.send({
-                embeds: [reportEmbed],
-                components: [actionRow]
+                embeds: [reportEmbed]
             });
             console.log('Report embed sent successfully');
-            report.messageId = embedMessage.id;
 
-            // Update the saved report with messageId
-            try {
-                fs.writeFileSync(reportsPath, JSON.stringify(reports, null, 2));
-                console.log('Report updated with messageId');
-            } catch (updateError) {
-                console.error('Error updating report with messageId:', updateError);
-            }
+            // Update the saved report with messageId in MongoDB
+            await Report.findByIdAndUpdate(newReport._id, {
+                messageId: embedMessage.id
+            });
+            console.log('Report updated with messageId in database');
         } catch (sendError) {
             console.error('Error sending report to channel:', sendError);
             // Report is already saved to database even if sending failed
