@@ -281,24 +281,28 @@ async function handleUnblacklistModal(interaction, config) {
         });
     }
     try {
-        const reportsPath = path.join(__dirname, '..', 'data', 'reports.json');
-        if (!fs.existsSync(reportsPath)) {
+        // Import Report model
+        const Report = require('../models/Report');
+
+        // Find the report in MongoDB
+        const report = await Report.findOne({
+            userId: userId,
+            unblacklisted: false,
+            approved: true
+        }).sort({ reportedAt: -1 });
+
+        if (!report) {
             return await interaction.editReply({
-                content: '❌ No reports found!'
+                content: '❌ No active blacklist report found for this user!'
             });
         }
-        let reports = JSON.parse(fs.readFileSync(reportsPath, 'utf8'));
-        const reportIndex = reports.findIndex(r => r.userId === userId && !r.unblacklisted);
-        if (reportIndex === -1) {
-            return await interaction.editReply({
-                content: '❌ No report found for this user or they are already unblacklisted!'
-            });
-        }
-        const report = reports[reportIndex];
-        report.unblacklisted = true;
-        report.unblacklistedBy = interaction.user.id;
-        report.unblacklistedAt = new Date().toISOString();
-        fs.writeFileSync(reportsPath, JSON.stringify(reports, null, 2));
+
+        // Update the report in MongoDB
+        await Report.findByIdAndUpdate(report._id, {
+            unblacklisted: true,
+            unblacklistedBy: interaction.user.id,
+            unblacklistedAt: new Date()
+        });
         const reportChannel = interaction.guild.channels.cache.get(config.reportChannelId);
         console.log(`[DEBUG] Attempting to update message - Channel: ${config.reportChannelId}, Message ID: ${report.messageId}`);
         if (reportChannel && report.messageId) {

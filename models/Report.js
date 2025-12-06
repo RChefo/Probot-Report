@@ -38,6 +38,14 @@ const ReportSchema = new mongoose.Schema({
         type: Boolean,
         default: false
     },
+    unblacklistedBy: {
+        type: String,
+        default: null
+    },
+    unblacklistedAt: {
+        type: Date,
+        default: null
+    },
     approved: {
         type: Boolean,
         default: false

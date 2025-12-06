@@ -150,6 +150,7 @@ module.exports = {
 
                 await interaction.showModal(modal);
             } else if (interaction.customId === 'unblacklist_user') {
+                console.log('Creating unblacklist modal...');
                 const modal = new ModalBuilder()
                     .setCustomId('unblacklist_modal')
                     .setTitle('✅ Unblacklist User');
@@ -166,7 +167,9 @@ module.exports = {
 
                 modal.addComponents(firstActionRow);
 
+                console.log('Showing unblacklist modal...');
                 await interaction.showModal(modal);
+                console.log('Unblacklist modal shown successfully');
             } else if (interaction.customId.startsWith('staff_add_blacklist_')) {
                 const userId = interaction.customId.split('_')[3];
 
