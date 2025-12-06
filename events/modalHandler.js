@@ -247,7 +247,7 @@ async function handleReportModal(interaction, config) {
                 }
             )
             .setFooter({
-                text: `ProBot Blacklist System • Report ID: ${reportId}`,
+                text: '',
                 iconURL: interaction.guild.iconURL({ dynamic: true })
             })
             .setTimestamp();
@@ -423,7 +423,7 @@ async function updateGlobalStats(guild, config) {
                 }
             )
             .setFooter({
-                text: `ProBot System • Auto-updated`,
+                text: '',
                 iconURL: guild.iconURL({ dynamic: true })
             })
             .setTimestamp();
@@ -667,7 +667,7 @@ async function handleStaffReportModal(interaction, config) {
                 }
             )
             .setFooter({
-                text: 'Staff Report System',
+                text: '',
                 iconURL: interaction.guild.iconURL({ dynamic: true })
             })
             .setTimestamp();
