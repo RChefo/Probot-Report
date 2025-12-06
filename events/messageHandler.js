@@ -241,6 +241,82 @@ module.exports = {
             return;
         }
 
+        // Check for panel command
+        if (message.content.toLowerCase() === '!panel') {
+            console.log('Panel command detected');
+            const configPath = path.join(__dirname, '..', 'config.json');
+            if (!fs.existsSync(configPath)) {
+                return await message.reply('❌ Bot is not set up yet!');
+            }
+
+            const config = JSON.parse(fs.readFileSync(configPath, 'utf8'));
+            const isAdmin = message.member.permissions.has('Administrator') ||
+                           (config.adminRoleId && message.member.roles.cache.has(config.adminRoleId)) ||
+                           (config.adminUserIds && config.adminUserIds.includes(message.author.id));
+
+            if (!isAdmin) {
+                return await message.reply('❌ This command is for administrators only!');
+            }
+
+            // Import Report model
+            const Report = require('../models/Report');
+
+            // Get statistics
+            const totalReports = await Report.countDocuments();
+            const activeBlacklists = await Report.countDocuments({ unblacklisted: false });
+            const resolvedCases = await Report.countDocuments({ unblacklisted: true });
+
+            const row = new ActionRowBuilder()
+                .addComponents(
+                    new ButtonBuilder()
+                        .setCustomId('report_user')
+                        .setLabel('Report User')
+                        .setStyle(ButtonStyle.Danger)
+                        .setEmoji('🚫'),
+                    new ButtonBuilder()
+                        .setCustomId('unblacklist_user')
+                        .setLabel('Unblacklist User')
+                        .setStyle(ButtonStyle.Success)
+                        .setEmoji('✅')
+                );
+
+            const embed = new EmbedBuilder()
+                .setTitle('🛡️ ProBot Blacklist Management System')
+                .setDescription('Select an action below to manage user reports:')
+                .setColor(0x5865F2)
+                .setThumbnail(message.guild.iconURL({ dynamic: true }))
+                .addFields(
+                    {
+                        name: 'Report User',
+                        value: 'Add a user to the blacklist with evidence',
+                        inline: true
+                    },
+                    {
+                        name: 'Unblacklist User',
+                        value: 'Remove a user from the blacklist',
+                        inline: true
+                    },
+                    {
+                        name: '\u200B',
+                        value: '\u200B',
+                        inline: true
+                    },
+                    {
+                        name: 'Current Statistics',
+                        value: `**Active Blacklists:** \`${activeBlacklists}\`\n**Resolved Cases:** \`${resolvedCases}\`\n**Last Updated:** <t:${Math.floor(Date.now() / 1000)}:F>`,
+                        inline: false
+                    }
+                )
+                .setFooter({
+                    text: `ProBot System • Panel created by ${message.author.tag}`,
+                    iconURL: message.author.displayAvatarURL({ dynamic: true })
+                })
+                .setTimestamp();
+
+            await message.channel.send({ embeds: [embed], components: [row] });
+            return;
+        }
+
         // Check for staff reports statistics command
         if (message.content.toLowerCase() === '!staffstats') {
             console.log('Staff reports stats command detected');
