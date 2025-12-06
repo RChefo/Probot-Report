@@ -47,10 +47,6 @@ module.exports = {
                         inline: false
                     }
                 )
-                .setFooter({
-                    text: `Checked by ${interaction.user.tag} • ${userReports.length} reports found`,
-                    iconURL: interaction.user.displayAvatarURL({ dynamic: true })
-                })
                 .setTimestamp();
             let currentPage = 0;
             const reportsPerPage = 1;
@@ -114,10 +110,7 @@ module.exports = {
                         });
                     }
                 }
-                embed.setFooter({
-                    text: `Checked by ${interaction.user.tag} • Page ${page + 1}/${totalPages}`,
-                    iconURL: interaction.user.displayAvatarURL({ dynamic: true })
-                });
+;
                 return embed;
             };
             const createButtons = (page) => {

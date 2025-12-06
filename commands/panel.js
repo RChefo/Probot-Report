@@ -72,9 +72,6 @@ module.exports = {
                     inline: false
                 }
             )
-            .setFooter({
-                iconURL: interaction.user.displayAvatarURL({ dynamic: true })
-            })
             .setTimestamp();
         await interaction.reply({ embeds: [embed], components: [row], ephemeral: true });
         await updatePanelStats(interaction);
@@ -112,9 +109,6 @@ async function updatePanelStats(interaction) {
                     inline: false
                 }
             )
-            .setFooter({
-                iconURL: interaction.user.displayAvatarURL({ dynamic: true })
-            })
             .setTimestamp();
         await interaction.editReply({ embeds: [embed] });
     } catch (error) {

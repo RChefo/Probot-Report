@@ -159,10 +159,6 @@ module.exports = {
                     .setTitle('🗑️ Database Cleanup Confirmation')
                     .setDescription('⚠️ **WARNING:** This will delete ALL reports from the database!\n\n**This action cannot be undone!**\n\nReact with ✅ to confirm or ❌ to cancel.')
                     .setColor(0xFF4444)
-                    .setFooter({
-                        text: 'ProBot Database Management',
-                        iconURL: message.guild.iconURL({ dynamic: true })
-                    })
                     .setTimestamp();
 
                 const confirmMessage = await message.reply({ embeds: [confirmEmbed] });
@@ -193,10 +189,6 @@ module.exports = {
                         .setTitle('✅ Database Cleaned Successfully')
                         .setDescription(`🗑️ **Deleted ${deleteResult.deletedCount} reports** from the database.\n\nThe database is now clean and ready for production use.`)
                         .setColor(0x00FF00)
-                        .setFooter({
-                            text: 'ProBot Database Management',
-                            iconURL: message.guild.iconURL({ dynamic: true })
-                        })
                         .setTimestamp();
 
                     await confirmMessage.edit({ embeds: [successEmbed] });
@@ -207,10 +199,6 @@ module.exports = {
                         .setTitle('❌ Database Cleanup Cancelled')
                         .setDescription('The database cleanup operation has been cancelled.\n\nNo data was deleted.')
                         .setColor(0xFFA500)
-                        .setFooter({
-                            text: 'ProBot Database Management',
-                            iconURL: message.guild.iconURL({ dynamic: true })
-                        })
                         .setTimestamp();
 
                     await confirmMessage.edit({ embeds: [cancelEmbed] });
@@ -300,9 +288,6 @@ module.exports = {
                         inline: false
                     }
                 )
-                .setFooter({
-                    iconURL: message.author.displayAvatarURL({ dynamic: true })
-                })
                 .setTimestamp();
 
             await message.channel.send({ embeds: [embed], components: [row] });

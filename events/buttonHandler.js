@@ -228,10 +228,7 @@ module.exports = {
                             const dismissedEmbed = EmbedBuilder.from(originalMessage.embeds[0])
                                 .setTitle('🚨 Staff Violation Report - DISMISSED')
                                 .setColor(0x666666)
-                                .setFooter({
-                                    text: `Dismissed by ${interaction.user.tag} • ProBot`,
-                                    iconURL: interaction.user.displayAvatarURL({ dynamic: true })
-                                });
+;
 
                             await originalMessage.edit({
                                 embeds: [dismissedEmbed],
@@ -449,10 +446,7 @@ module.exports = {
                             const processedEmbed = EmbedBuilder.from(originalMessage.embeds[0])
                                 .setTitle('✅ Staff Violation Report - BLACKLISTED')
                                 .setColor(0xDC143C)
-                                .setFooter({
-                                    text: `Blacklisted by ${interaction.user.tag} • ProBot`,
-                                    iconURL: interaction.user.displayAvatarURL({ dynamic: true })
-                                });
+;
 
                             await originalMessage.edit({
                                 embeds: [processedEmbed],

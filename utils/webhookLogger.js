@@ -49,9 +49,7 @@ class WebhookLogger {
                 .setDescription(message)
                 .setColor(color)
                 .setTimestamp()
-                .setFooter({
-                    text: 'ProBot Info Logger'
-                });
+;
             await this.webhookClient.send({
                 embeds: [infoEmbed]
             });

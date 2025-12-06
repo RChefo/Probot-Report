@@ -46,9 +46,6 @@ async function updateGlobalStats(guild, config) {
                     inline: false
                 }
             )
-            .setFooter({
-                iconURL: guild.iconURL({ dynamic: true })
-            })
             .setTimestamp();
         try {
             const statsMessage = await statsChannel.messages.fetch(config.statsMessageId);
@@ -89,9 +86,6 @@ async function updateGlobalStats(guild, config) {
                                 inline: false
                             }
                         )
-                        .setFooter({
-                            iconURL: guild.iconURL({ dynamic: true })
-                        })
                         .setTimestamp();
                     const existingComponents = panelMessage.components;
                     await panelMessage.edit({ embeds: [panelEmbed], components: existingComponents });
