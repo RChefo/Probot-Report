@@ -47,6 +47,9 @@ module.exports = {
             }
 
             if (interaction.customId === 'staff_report_button') {
+                // Defer reply to prevent timeout
+                await interaction.deferReply({ ephemeral: true });
+
                 console.log('Creating staff report modal...');
                 const modal = new ModalBuilder()
                     .setCustomId('staff_report_modal')
