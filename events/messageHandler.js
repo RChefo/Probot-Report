@@ -113,7 +113,6 @@ module.exports = {
                         }
                     )
                     .setFooter({
-                        text: 'ProBot Blacklist System • Real-time Statistics',
                         iconURL: message.guild.iconURL({ dynamic: true })
                     })
                     .setTimestamp();
@@ -304,7 +303,6 @@ module.exports = {
                     }
                 )
                 .setFooter({
-                    text: `ProBot System • Panel created by ${message.author.tag}`,
                     iconURL: message.author.displayAvatarURL({ dynamic: true })
                 })
                 .setTimestamp();
@@ -357,7 +355,6 @@ module.exports = {
                         }
                     )
                     .setFooter({
-                        text: 'Staff Report Management System • ProBot',
                         iconURL: message.guild.iconURL({ dynamic: true })
                     })
                     .setTimestamp();
