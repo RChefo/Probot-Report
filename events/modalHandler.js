@@ -102,6 +102,9 @@ async function handleReportModal(interaction, config) {
     const userId = interaction.fields.getTextInputValue('user_id');
     const reason = interaction.fields.getTextInputValue('reason');
     const proof = interaction.fields.getTextInputValue('proof') || 'No proof available';
+
+    // Import Report model
+    const Report = require('../models/Report');
     if (!/^\d{15,20}$/.test(userId)) {
         return await interaction.editReply({
             content: '❌ Invalid User ID! Please enter a valid Discord user ID (15-20 digits).'
@@ -113,7 +116,15 @@ async function handleReportModal(interaction, config) {
         });
     }
     try {
-        const reportsPath = path.join(__dirname, '..', 'data', 'reports.json');
+        const dataDir = path.join(__dirname, '..', 'data');
+        const reportsPath = path.join(dataDir, 'reports.json');
+
+        // Create data directory if it doesn't exist
+        if (!fs.existsSync(dataDir)) {
+            fs.mkdirSync(dataDir, { recursive: true });
+            console.log('Created data directory');
+        }
+
         let reports = [];
         if (fs.existsSync(reportsPath)) {
             reports = JSON.parse(fs.readFileSync(reportsPath, 'utf8'));
@@ -133,13 +144,25 @@ async function handleReportModal(interaction, config) {
                 editedBy: interaction.user.id,
                 editedAt: new Date().toISOString()
             });
-            existingReport.reason = reason;
-            existingReport.proof = proof;
-            existingReport.lastEditedBy = interaction.user.id;
-            existingReport.lastEditedAt = new Date().toISOString();
+            // Update existing report in MongoDB
+            const editEntry = {
+                editId: `EDIT-${Date.now().toString(36).toUpperCase()}-${Math.random().toString(36).substr(2, 3).toUpperCase()}`,
+                previousReason: existingReport.reason,
+                previousProof: existingReport.proof,
+                newReason: reason,
+                newProof: proof,
+                editedBy: interaction.user.id,
+                editedAt: new Date()
+            };
+
+            await Report.findByIdAndUpdate(existingReport._id, {
+                reason: reason,
+                proof: proof,
+                edits: [...(existingReport.edits || []), editEntry]
+            });
+
             console.log(`[INFO] Updated existing report for user ${userId}`);
             await updateExistingReportEmbed(interaction, config, existingReport);
-            fs.writeFileSync(reportsPath, JSON.stringify(reports, null, 2));
             await updateGlobalStats(interaction.guild, config);
             await interaction.editReply({
                 content: `✅ Report updated successfully for user \`${userId}\`!\n📍 Report Channel: <#${config.reportChannelId}>`
@@ -148,7 +171,7 @@ async function handleReportModal(interaction, config) {
         }
         const reportId = `RPT-${Date.now().toString(36).toUpperCase()}-${Math.random().toString(36).substr(2, 5).toUpperCase()}`;
 
-        console.log('Saving staff report:', {
+        console.log('Saving report:', {
             id: reportId,
             userId: userId,
             reason: reason,
@@ -156,17 +179,21 @@ async function handleReportModal(interaction, config) {
             server: 'Not specified'
         });
 
-        try {
-            reports.push(report);
-            console.log('Reports after push:', reports.length);
-            fs.writeFileSync(reportsPath, JSON.stringify(reports, null, 2));
-            console.log('Staff report saved successfully to:', reportsPath);
-        } catch (saveError) {
-            console.error('Error saving staff report:', saveError);
-            return await interaction.editReply({
-                content: '❌ Error saving report to database.'
-            });
-        }
+        const newReport = new Report({
+            id: reportId,
+            userId: userId,
+            reason: reason,
+            proof: proof,
+            server: 'Not specified',
+            reportedBy: interaction.user.id,
+            messageId: null,
+            unblacklisted: false,
+            approved: false,
+            edits: []
+        });
+
+        await newReport.save();
+        console.log('Report saved to database successfully');
         const reportChannel = interaction.guild.channels.cache.get(config.reportChannelId);
         if (!reportChannel) {
             return await interaction.editReply({
