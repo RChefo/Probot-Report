@@ -39,6 +39,7 @@ module.exports = {
             }
 
             if (interaction.customId === 'staff_report_button') {
+                console.log('Creating staff report modal...');
                 const modal = new ModalBuilder()
                     .setCustomId('staff_report_modal')
                     .setTitle('🚨 Staff Violation Report');
@@ -95,7 +96,9 @@ module.exports = {
 
                 modal.addComponents(firstActionRow, secondActionRow, thirdActionRow, fourthActionRow, fifthActionRow);
 
+                console.log('Showing modal...');
                 await interaction.showModal(modal);
+                console.log('Modal shown successfully');
             } else if (interaction.customId === 'report_user') {
                 const modal = new ModalBuilder()
                     .setCustomId('report_modal')
