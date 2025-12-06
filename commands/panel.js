@@ -73,7 +73,6 @@ module.exports = {
                 }
             )
             .setFooter({
-                text: `ProBot System • Managed by ${interaction.user.tag}`,
                 iconURL: interaction.user.displayAvatarURL({ dynamic: true })
             })
             .setTimestamp(        );
@@ -114,7 +113,6 @@ async function updatePanelStats(interaction) {
                 }
             )
             .setFooter({
-                text: `ProBot System • Managed by ${interaction.user.tag}`,
                 iconURL: interaction.user.displayAvatarURL({ dynamic: true })
             })
             .setTimestamp();

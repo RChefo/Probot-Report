@@ -463,7 +463,6 @@ async function updateGlobalStats(guild, config) {
                             }
                         )
                         .setFooter({
-                            text: `ProBot System • Auto-updated`,
                             iconURL: guild.iconURL({ dynamic: true })
                         })
                         .setTimestamp();

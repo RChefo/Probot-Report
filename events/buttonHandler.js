@@ -380,7 +380,6 @@ module.exports = {
                                 }
                             )
                             .setFooter({
-                                text: `ProBot Blacklist System • Report ID: ${reportId}`,
                                 iconURL: interaction.guild.iconURL({ dynamic: true })
                             })
                             .setTimestamp();
